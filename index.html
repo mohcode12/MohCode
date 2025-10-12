@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MohCode - محرر الأكواد</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body.light {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        body.dark {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            position: relative;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .nav-icons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .icon-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .icon-btn.active {
+            background: rgba(255,255,255,0.4);
+        }
+
+        .icon-btn.active::after {
+            content: '↩️';
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            font-size: 18px;
+            background: #764ba2;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Container */
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 75px);
+        }
+
+        /* Preview Area */
+        .preview-area {
+            flex: 1;
+            border-bottom: 3px solid #667eea;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preview-area.fullscreen {
+            position: fixed;
+            top: 75px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 999;
+            border: none;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+
+        /* Code Area */
+        .code-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .code-area.fullscreen {
+            position: fixed;
+            top: 75px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 999;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: #667eea;
+            padding: 0 10px;
+        }
+
+        .dark .tabs {
+            background: #2d2d30;
+        }
+
+        .tab {
+            padding: 12px 25px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s;
+            border-radius: 8px 8px 0 0;
+            margin: 5px 5px 0 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .tab.active {
+            background: #f5f5f5;
+            color: #667eea;
+        }
+
+        .dark .tab.active {
+            background: #1e1e1e;
+            color: #4fc3f7;
+        }
+
+        /* Editors */
+        .editors {
+            flex: 1;
+            position: relative;
+        }
+
+        .editor {
+            display: none;
+            height: 100%;
+            padding: 0;
+        }
+
+        .editor.active {
+            display: block;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100%;
+            border: none;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 16px;
+            resize: none;
+            outline: none;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .dark textarea {
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+
+        /* Syntax Highlighting */
+        .code-display {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 16px;
+            overflow: auto;
+            pointer-events: none;
+            white-space: pre-wrap; /* تم التعديل هنا */
+            line-height: 1.6;
+            direction: ltr;
+            text-align: left;
+            word-wrap: break-word; /* تمت الإضافة */
+            overflow-wrap: break-word; /* تمت الإضافة */
+        }
+
+        textarea {
+            position: relative;
+            background: transparent !important;
+            color: transparent;
+            caret-color: #333;
+            direction: ltr;
+            text-align: left;
+            word-wrap: break-word; /* تمت الإضافة */
+            overflow-wrap: break-word; /* تمت الإضافة */
+            white-space: pre-wrap; /* تم التعديل هنا */
+        }
+
+        .dark textarea {
+            caret-color: #d4d4d4;
+        }
+
+        /* Syntax Colors - Light Theme */
+        .light .keyword { color: #0000ff; font-weight: bold; }
+        .light .string { color: #a31515; }
+        .light .comment { color: #008000; font-style: italic; }
+        .light .function { color: #795e26; }
+        .light .number { color: #098658; }
+        .light .tag { color: #800000; }
+        .light .attribute { color: #ff0000; }
+        .light .value { color: #0451a5; }
+
+        /* Syntax Colors - Dark Theme */
+        .dark .keyword { color: #569cd6; font-weight: bold; }
+        .dark .string { color: #ce9178; }
+        .dark .comment { color: #6a9955; font-style: italic; }
+        .dark .function { color: #dcdcaa; }
+        .dark .number { color: #b5cea8; }
+        .dark .tag { color: #4ec9b0; }
+        .dark .attribute { color: #9cdcfe; }
+        .dark .value { color: #ce9178; }
+
+        /* Library Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .dark .modal-content {
+            background: #2d2d30;
+        }
+
+        .modal-header {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            outline: none;
+        }
+
+        .dark .modal-input {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-color: #4fc3f7;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .modal-btn.primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .modal-btn.primary:hover {
+            background: #5568d3;
+        }
+
+        .modal-btn.secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .dark .modal-btn.secondary {
+            background: #3e3e42;
+            color: #d4d4d4;
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 10px 15px;
+            }
+
+            .logo {
+                font-size: 22px;
+            }
+
+            .icon-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+
+            .nav-icons {
+                gap: 8px;
+            }
+
+            .tab {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+
+            textarea, .code-display {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body class="light">
+    <!-- Navbar -->
+    <div class="navbar">
+        <div class="logo">MohCode</div>
+        <div class="nav-icons">
+            <button class="icon-btn" id="previewFullscreen" title="عرض التنفيذ كامل">🖥️</button>
+            <button class="icon-btn" id="codeFullscreen" title="عرض الكود كامل">📝</button>
+            <button class="icon-btn" id="darkMode" title="التعتيم">🌙</button>
+            <button class="icon-btn" id="libraryBtn" title="المكتبة">📚</button>
+        </div>
+    </div>
+
+    <!-- Container -->
+    <div class="container">
+        <!-- Preview Area -->
+        <div class="preview-area" id="previewArea">
+            <iframe id="preview"></iframe>
+        </div>
+
+        <!-- Code Area -->
+        <div class="code-area" id="codeArea">
+            <div class="tabs">
+                <button class="tab active" data-lang="html">
+                    📄 HTML
+                </button>
+                <button class="tab" data-lang="css">
+                    🎨 CSS
+                </button>
+                <button class="tab" data-lang="js">
+                    ⚡ JavaScript
+                </button>
+            </div>
+
+            <div class="editors">
+                <div class="editor active" id="htmlEditor">
+                    <div class="code-display" id="htmlDisplay"></div>
+                    <textarea id="htmlCode" spellcheck="false" placeholder="اكتب كود HTML هنا..."></textarea>
+                </div>
+                <div class="editor" id="cssEditor">
+                    <div class="code-display" id="cssDisplay"></div>
+                    <textarea id="cssCode" spellcheck="false" placeholder="اكتب كود CSS هنا..."></textarea>
+                </div>
+                <div class="editor" id="jsEditor">
+                    <div class="code-display" id="jsDisplay"></div>
+                    <textarea id="jsCode" spellcheck="false" placeholder="اكتب كود JavaScript هنا..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Library Modal -->
+    <div class="modal" id="libraryModal" style="display: none;">
+    </div>
+
+    <script>
+        // Elements
+        const htmlCode = document.getElementById('htmlCode');
+        const cssCode = document.getElementById('cssCode');
+        const jsCode = document.getElementById('jsCode');
+        const htmlDisplay = document.getElementById('htmlDisplay');
+        const cssDisplay = document.getElementById('cssDisplay');
+        const jsDisplay = document.getElementById('jsDisplay');
+        const preview = document.getElementById('preview');
+        const tabs = document.querySelectorAll('.tab');
+        const editors = document.querySelectorAll('.editor');
+        const darkModeBtn = document.getElementById('darkMode');
+        const previewFullscreenBtn = document.getElementById('previewFullscreen');
+        const codeFullscreenBtn = document.getElementById('codeFullscreen');
+        const previewArea = document.getElementById('previewArea');
+        const codeArea = document.getElementById('codeArea');
+        const libraryBtn = document.getElementById('libraryBtn');
+
+        let libraryUrl = localStorage.getItem('mohcode_library_url') || '';
+
+        // Syntax Highlighting Functions
+        function highlightHTML(code) {
+            return code
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/(&lt;\/?)([\w-]+)/g, '$1<span class="tag">$2</span>')
+                .replace(/([\w-]+)=("[^"]*"|'[^']*')/g, '<span class="attribute">$1</span>=<span class="string">$2</span>')
+                .replace(/(&lt;!--.*?--&gt;)/g, '<span class="comment">$1</span>');
+        }
+
+        function highlightCSS(code) {
+            return code
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="comment">$1</span>')
+                .replace(/([.#]?[\w-]+)(\s*{)/g, '<span class="keyword">$1</span>$2')
+                .replace(/([\w-]+)(\s*:)/g, '<span class="attribute">$1</span>$2')
+                .replace(/:\s*([^;]+)/g, ': <span class="value">$1</span>')
+                .replace(/(\d+(?:px|em|rem|%|vh|vw)?)/g, '<span class="number">$1</span>')
+                .replace(/(#[0-9a-fA-F]{3,6})/g, '<span class="string">$1</span>');
+        }
+
+        function highlightJS(code) {
+            const keywords = /\b(const|let|var|function|if|else|for|while|return|class|new|this|import|export|async|await|try|catch|throw)\b/g;
+            const strings = /(["'`])(?:(?=(\\?))\2.)*?\1/g;
+            const comments = /(\/\/.*$|\/\*[\s\S]*?\*\/)/gm;
+            const functions = /\b([a-zA-Z_$][a-zA-Z0-9_$]*)\s*(?=\()/g;
+            const numbers = /\b(\d+(?:\.\d+)?)\b/g;
+
+            return code
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(comments, '<span class="comment">$1</span>')
+                .replace(strings, '<span class="string">$1</span>')
+                .replace(keywords, '<span class="keyword">$1</span>')
+                .replace(functions, '<span class="function">$1</span>')
+                .replace(numbers, '<span class="number">$1</span>');
+        }
+
+        function updateHighlight(textarea, display, highlighter) {
+            const code = textarea.value;
+            display.innerHTML = highlighter(code);
+            display.scrollTop = textarea.scrollTop;
+            display.scrollLeft = textarea.scrollLeft;
+        }
+
+        // Sync scroll
+        function syncScroll(textarea, display) {
+            display.scrollTop = textarea.scrollTop;
+            display.scrollLeft = textarea.scrollLeft;
+        }
+
+        htmlCode.addEventListener('input', () => {
+            updateHighlight(htmlCode, htmlDisplay, highlightHTML);
+            updatePreview();
+        });
+        htmlCode.addEventListener('scroll', () => syncScroll(htmlCode, htmlDisplay));
+
+        cssCode.addEventListener('input', () => {
+            updateHighlight(cssCode, cssDisplay, highlightCSS);
+            updatePreview();
+        });
+        cssCode.addEventListener('scroll', () => syncScroll(cssCode, cssDisplay));
+
+        jsCode.addEventListener('input', () => {
+            updateHighlight(jsCode, jsDisplay, highlightJS);
+            updatePreview();
+        });
+        jsCode.addEventListener('scroll', () => syncScroll(jsCode, jsDisplay));
+
+        // Update Preview
+        function updatePreview() {
+            const html = htmlCode.value;
+            const css = `<style>${cssCode.value}</style>`;
+            const js = `<script>${jsCode.value}<\/script>`;
+            const content = html + css + js;
+            
+            const previewDoc = preview.contentDocument || preview.contentWindow.document;
+            previewDoc.open();
+            previewDoc.write(content);
+            previewDoc.close();
+        }
+
+        // Tab Switching
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const lang = tab.getAttribute('data-lang');
+                
+                tabs.forEach(t => t.classList.remove('active'));
+                editors.forEach(e => e.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.getElementById(`${lang}Editor`).classList.add('active');
+            });
+        });
+
+        // Dark Mode
+        darkModeBtn.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            document.body.classList.toggle('light');
+            
+            updateHighlight(htmlCode, htmlDisplay, highlightHTML);
+            updateHighlight(cssCode, cssDisplay, highlightCSS);
+            updateHighlight(jsCode, jsDisplay, highlightJS);
+        });
+
+        // Fullscreen Functions
+        previewFullscreenBtn.addEventListener('click', () => {
+            if (previewArea.classList.contains('fullscreen')) {
+                previewArea.classList.remove('fullscreen');
+                codeArea.style.display = 'flex';
+                previewFullscreenBtn.classList.remove('active');
+            } else {
+                previewArea.classList.add('fullscreen');
+                codeArea.style.display = 'none';
+                codeArea.classList.remove('fullscreen');
+                codeFullscreenBtn.classList.remove('active');
+                previewFullscreenBtn.classList.add('active');
+            }
+        });
+
+        codeFullscreenBtn.addEventListener('click', () => {
+            if (codeArea.classList.contains('fullscreen')) {
+                codeArea.classList.remove('fullscreen');
+                previewArea.style.display = 'block';
+                codeFullscreenBtn.classList.remove('active');
+            } else {
+                codeArea.classList.add('fullscreen');
+                previewArea.style.display = 'none';
+                previewArea.classList.remove('fullscreen');
+                previewFullscreenBtn.classList.remove('active');
+                codeFullscreenBtn.classList.add('active');
+            }
+        });
+
+        // Library Functions
+        libraryBtn.addEventListener('click', () => {
+            window.open('https://www.facebook.com', '_blank');
+        });
+
+        // Initial highlight
+        updateHighlight(htmlCode, htmlDisplay, highlightHTML);
+        updateHighlight(cssCode, cssDisplay, highlightCSS);
+        updateHighlight(jsCode, jsDisplay, highlightJS);
+
+        // Default code
+        htmlCode.value = ``;
+
+        cssCode.value = ``;
+
+        jsCode.value = ``;
+
+        updateHighlight(htmlCode, htmlDisplay, highlightHTML);
+        updateHighlight(cssCode, cssDisplay, highlightCSS);
+        updateHighlight(jsCode, jsDisplay, highlightJS);
+        updatePreview();
+    </script>
+</body>
+</html>
