@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MohCode - محرر الأكواد</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body.light {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        body.dark {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .nav-icons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .icon-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .icon-btn.active {
+            background: rgba(255,255,255,0.4);
+        }
+
+        .icon-btn.active::after {
+            content: '↩️';
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            font-size: 18px;
+            background: #764ba2;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Container */
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding-top: 75px;
+        }
+
+        /* Preview Area */
+        .preview-area {
+            flex: 1;
+            border-bottom: 3px solid #667eea;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preview-area.fullscreen {
+            position: fixed;
+            top: 75px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 999;
+            border: none;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+
+        /* Code Area */
+        .code-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .code-area.fullscreen {
+            position: fixed;
+            top: 75px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 999;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: #667eea;
+            padding: 0 10px;
+        }
+
+        .dark .tabs {
+            background: #2d2d30;
+        }
+
+        .tab {
+            padding: 12px 25px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s;
+            border-radius: 8px 8px 0 0;
+            margin: 5px 5px 0 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .tab.active {
+            background: #f5f5f5;
+            color: #667eea;
+        }
+
+        .dark .tab.active {
+            background: #1e1e1e;
+            color: #4fc3f7;
+        }
+
+        /* Editors */
+        .editor-panes {
+            flex: 1;
+            position: relative;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 16px;
+            resize: none;
+            outline: none;
+            display: none;
+            overflow: auto;
+            background: #f5f5f5;
+            color: #333;
+            direction: ltr;
+            line-height: 1.6;
+        }
+
+        textarea.active {
+            display: block;
+        }
+
+        .dark textarea {
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+
+        /* تلوين بسيط للكود */
+        textarea::selection {
+            background: #add6ff;
+        }
+
+        .dark textarea::selection {
+            background: #264f78;
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 10px 15px;
+            }
+
+            .logo {
+                font-size: 22px;
+            }
+
+            .icon-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+
+            .nav-icons {
+                gap: 8px;
+            }
+
+            .tab {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+
+            textarea {
+                font-size: 14px;
+            }
+        }
+
+        /* نافذة التبرع */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            direction: ltr;
+            position: relative;
+        }
+
+        .modal-content h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #764ba2;
+        }
+
+        .wallet {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .wallet label {
+            font-weight: bold;
+            color: #333;
+            width: 100%;
+        }
+
+        .wallet input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .wallet button {
+            background-color: #764ba2;
+            color: white;
+            border: none;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .wallet button:hover {
+            background-color: #5e3b8a;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            font-size: 20px;
+            color: #999;
+            cursor: pointer;
+        }
+
+        .dark .modal-content {
+            background-color: #2d2d30;
+            color: white;
+        }
+
+        .dark .wallet input {
+            background-color: #444;
+            color: #fff;
+            border-color: #666;
+        }
+
+        .dark .wallet label {
+            color: #ccc;
+        }
+    </style>
+</head>
+<body class="light">
+    <!-- Navbar -->
+    <div class="navbar">
+        <div class="logo">MohCode</div>
+        <div class="nav-icons">
+            <button class="icon-btn" id="previewFullscreen" title="عرض التنفيذ كامل">🖥️</button>
+            <button class="icon-btn" id="codeFullscreen" title="عرض الكود كامل">📝</button>
+            <button class="icon-btn" id="darkMode" title="التعتيم">🌙</button>
+            <button class="icon-btn" id="libraryBtn" title="المكتبة">💰</button>
+        </div>
+    </div>
+
+    <!-- Container -->
+    <div class="container">
+        <!-- Preview Area -->
+        <div class="preview-area" id="previewArea">
+            <iframe id="preview" srcdoc=""></iframe>
+        </div>
+
+        <!-- Code Area -->
+        <div class="code-area" id="codeArea">
+            <div class="tabs">
+                <button class="tab active" id="tab-html" data-lang="html">📄 HTML</button>
+                <button class="tab" id="tab-css" data-lang="css">🎨 CSS</button>
+                <button class="tab" id="tab-js" data-lang="js">⚡ JavaScript</button>
+            </div>
+            <div class="editor-panes">
+                <textarea id="htmlCode" class="active" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+                <textarea id="cssCode" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+                <textarea id="jsCode" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة التبرع -->
+    <div id="donationModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeModal">&times;</span>
+            <h5 style="text-align: center;">ساهم بدعم تطوير الموقع ليستمر مجانًا ❤️</h5>
+            <h2>عناوين التبرع</h2>
+            <div class="wallet">
+                <label>USDT (TRC20):</label>
+                <input type="text" readonly value="TM7U2DjyE3wtgxWf23AtCYKZwZ6oeKVozB" id="wallet1">
+                <button onclick="copyToClipboard('wallet1')">نسخ</button>
+            </div>
+            <div class="wallet">
+                <label>BTC (Bitcoin):</label>
+                <input type="text" readonly value="bc1qx9lkhgnfkaam4xpxfffacllaev52uk7lalpu2e" id="wallet2">
+                <button onclick="copyToClipboard('wallet2')">نسخ</button>
+            </div>
+            <div class="wallet">
+                <label>USDC (Polygon):</label>
+                <input type="text" readonly value="0x16B21E4d531bd2DCb77449Eb7F2b444DC9901B18" id="wallet3">
+                <button onclick="copyToClipboard('wallet3')">نسخ</button>
+            </div>
+            <div class="wallet">
+                <label>BNB (Bnb smart chine):</label>
+                <input type="text" readonly value="0x16B21E4d531bd2DCb77449Eb7F2b444DC9901B18" id="wallet4">
+                <button onclick="copyToClipboard('wallet4')">نسخ</button>
+            </div>
+            <div class="wallet">
+                <label>ETH (Arbitrum):</label>
+                <input type="text" readonly value="0x16B21E4d531bd2DCb77449Eb7F2b444DC9901B18" id="wallet5">
+                <button onclick="copyToClipboard('wallet5')">نسخ</button>
+            </div>
+            <div class="wallet">
+                <label>SOL (Solana):</label>
+                <input type="text" readonly value="Awnx7SaQ3vn6PMkR2JSpUiZSjTLqJxZmYPabXLrJMWi9" id="wallet6">
+                <button onclick="copyToClipboard('wallet6')">نسخ</button>
+            </div>
+            <div class="wallet">
+                <label>LTC (Litecoin):</label>
+                <input type="text" readonly value="ltc1qktqrkuzgqhvzacxpj3c8ewqsxj2ufmtff7tf2s" id="wallet7">
+                <button onclick="copyToClipboard('wallet7')">نسخ</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const htmlCode = document.getElementById('htmlCode');
+        const cssCode = document.getElementById('cssCode');
+        const jsCode = document.getElementById('jsCode');
+        const preview = document.getElementById('preview');
+        const tabs = document.querySelectorAll('.tab');
+        const darkModeBtn = document.getElementById('darkMode');
+        const previewFullscreenBtn = document.getElementById('previewFullscreen');
+        const codeFullscreenBtn = document.getElementById('codeFullscreen');
+        const previewArea = document.getElementById('previewArea');
+        const codeArea = document.getElementById('codeArea');
+        const libraryBtn = document.getElementById('libraryBtn');
+
+        const modal = document.getElementById('donationModal');
+        const closeModal = document.getElementById('closeModal');
+
+        // تلوين الكود بشكل بسيط
+        function highlightCode(textarea) {
+            const code = textarea.value;
+            const lines = code.split('\n');
+            
+            // نمط بسيط للتلوين
+            textarea.style.background = 'linear-gradient(90deg, transparent 0%, transparent 100%)';
+        }
+
+        function updatePreview() {
+            preview.srcdoc = `<style>${cssCode.value}</style>${htmlCode.value}<script>${jsCode.value}<\/script>`;
+        }
+
+        [htmlCode, cssCode, jsCode].forEach(el => {
+            el.addEventListener('input', () => {
+                updatePreview();
+                highlightCode(el);
+            });
+        });
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('textarea').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            document.getElementById(tab + 'Code').classList.add('active');
+        }
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const lang = tab.getAttribute('data-lang');
+                showTab(lang);
+            });
+        });
+
+        darkModeBtn.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            document.body.classList.toggle('light');
+        });
+
+        previewFullscreenBtn.addEventListener('click', () => {
+            if (previewArea.classList.contains('fullscreen')) {
+                previewArea.classList.remove('fullscreen');
+                codeArea.style.display = 'flex';
+                previewFullscreenBtn.classList.remove('active');
+            } else {
+                previewArea.classList.add('fullscreen');
+                codeArea.style.display = 'none';
+                codeArea.classList.remove('fullscreen');
+                codeFullscreenBtn.classList.remove('active');
+                previewFullscreenBtn.classList.add('active');
+            }
+        });
+
+        codeFullscreenBtn.addEventListener('click', () => {
+            if (codeArea.classList.contains('fullscreen')) {
+                codeArea.classList.remove('fullscreen');
+                previewArea.style.display = 'block';
+                codeFullscreenBtn.classList.remove('active');
+            } else {
+                codeArea.classList.add('fullscreen');
+                previewArea.style.display = 'none';
+                previewArea.classList.remove('fullscreen');
+                previewFullscreenBtn.classList.remove('active');
+                codeFullscreenBtn.classList.add('active');
+            }
+        });
+
+        // إظهار نافذة التبرع
+        libraryBtn.addEventListener('click', () => {
+            modal.style.display = 'block';
+        });
+
+        // إغلاق نافذة التبرع
+        closeModal.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        // إغلاق عند الضغط خارج النافذة
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // نسخ العنوان
+        function copyToClipboard(inputId) {
+            const input = document.getElementById(inputId);
+            input.select();
+            input.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+
+            const originalText = input.value;
+            input.value = '✅ تم النسخ!';
+            setTimeout(() => {
+                input.value = originalText;
+            }, 1000);
+        }
+
+        // تحديث أولي للمعاينة
+        updatePreview();
+    </script>
+</body>
+</html>
